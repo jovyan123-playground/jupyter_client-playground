@@ -21,6 +21,8 @@ from traitlets import Type
 from traitlets import Unicode
 from traitlets.config import LoggingConfigurable  # type: ignore
 
+from .provisioning import KernelProvisionerFactory as KPF
+
 pjoin = os.path.join
 
 NATIVE_KERNEL_NAME = "python3"
@@ -204,6 +206,7 @@ class KernelSpecManager(LoggingConfigurable):
         """Returns a :class:`KernelSpec` instance for a given kernel_name
         and resource_dir.
         """
+        kspec = None
         if kernel_name == NATIVE_KERNEL_NAME:
             try:
                 from ipykernel.kernelspec import RESOURCES, get_kernel_dict
@@ -212,9 +215,14 @@ class KernelSpecManager(LoggingConfigurable):
                 pass
             else:
                 if resource_dir == RESOURCES:
-                    return self.kernel_spec_class(resource_dir=resource_dir, **get_kernel_dict())
+                    kspec = self.kernel_spec_class(resource_dir=resource_dir, **get_kernel_dict())
+        if not kspec:
+            kspec = self.kernel_spec_class.from_resource_dir(resource_dir)
 
-        return self.kernel_spec_class.from_resource_dir(resource_dir)
+        if not KPF.instance(parent=self.parent).is_provisioner_available(kernel_name, kspec):
+            raise NoSuchKernel(kernel_name)
+
+        return kspec
 
     def _find_spec_directory(self, kernel_name):
         """Find the resource directory of a named kernel spec"""

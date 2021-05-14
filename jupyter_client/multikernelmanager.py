@@ -210,6 +210,7 @@ class MultiKernelManager(LoggingConfigurable):
                     km_class=self.kernel_manager_class.__class__
                 )
             )
+        kwargs['kernel_id'] = kernel_id  # Make kernel_id available to manager and provisioner
         fut = asyncio.ensure_future(
             self._add_kernel_when_ready(kernel_id, km, ensure_async(km.start_kernel(**kwargs)))
         )
