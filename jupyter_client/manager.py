@@ -93,7 +93,6 @@ class KernelManager(ConnectionFileMixin):
     # during the kernel's lifecycle, while `provisioner` will span that time,
     # being set prior to launch and unset following the kernel's termination.
 
-    kernel: t.Optional[KernelProvisionerBase] = None
     provisioner: t.Optional[KernelProvisionerBase] = None
 
     kernel_spec_manager: Instance = Instance(kernelspec.KernelSpecManager)
