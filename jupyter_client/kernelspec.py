@@ -11,12 +11,12 @@ import warnings
 from jupyter_core.paths import jupyter_data_dir  # type: ignore
 from jupyter_core.paths import jupyter_path
 from jupyter_core.paths import SYSTEM_JUPYTER_PATH
-from traitlets import observe
 from traitlets import Bool  # type: ignore
 from traitlets import CaselessStrEnum
 from traitlets import Dict
 from traitlets import HasTraits
 from traitlets import List
+from traitlets import observe
 from traitlets import Set
 from traitlets import Type
 from traitlets import Unicode
