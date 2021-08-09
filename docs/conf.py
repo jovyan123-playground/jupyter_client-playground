@@ -322,4 +322,4 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
 def setup(app):
     HERE = osp.abspath(osp.dirname(__file__))
     dest = osp.join(HERE, 'changelog.md')
-    shutil.copy(osp.join(HERE, '..', '..', 'CHANGELOG.md'), dest)
+    shutil.copy(osp.join(HERE, '..', 'CHANGELOG.md'), dest)
