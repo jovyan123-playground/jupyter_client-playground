@@ -19,3 +19,7 @@ global-exclude *.orig
 global-exclude .git
 global-exclude .github
 global-exclude .ipynb_checkpoints
+
+include *.md
+include *.yaml
+include *.yml
