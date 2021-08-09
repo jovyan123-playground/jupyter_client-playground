@@ -10,7 +10,7 @@ if match:
     if match['rest']:
         parts.append(match['rest'])
 else:
-    parts = ()
+    parts = []
 version_info = tuple(parts)
 
 
