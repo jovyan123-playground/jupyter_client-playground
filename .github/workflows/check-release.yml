@@ -6,8 +6,7 @@ on:
     branches: ["*"]
 
 permissions:
-  contents:
-    write
+  contents: write
 
 jobs:
   check_release:
@@ -26,7 +25,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v2
         with:
-          node-version: '14.x'
+          node-version: "14.x"
       - name: Get pip cache dir
         id: pip-cache
         run: |
