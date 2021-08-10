@@ -14,9 +14,7 @@ The recommended way to make a release is to use [`jupyter_releaser`](https://git
 ### Bump version
 
 - `export version=<NEW_VERSION>`
-- `tbump ${version} `
-- `git commit -am "Bumped version to version ${version} for release"`
-- `git tag ${version}`
+- `tbump ${version} --no-push`
 
 ### Push to PyPI
 
@@ -29,7 +27,7 @@ twine upload dist/*
 
 ### Dev version
 
-- Bump the patch version and add the 'dev' tag back to the end of the version tuple using `tbump <DEV_VERSION>`
+- Bump the patch version and add the 'dev' tag back to the end of the version tuple using `tbump <DEV_VERSION> --no-push`
 
 ### Push to GitHub
 
