@@ -9,7 +9,7 @@ The recommended way to make a release is to use [`jupyter_releaser`](https://git
 ### Prerequisites
 
 - First check that the CHANGELOG.md is up to date for the next release version
-- Install packaging requirements: `pip install tbump build`
+- Install packaging requirements: `pip install tbump build tomlkit==0.7.0`
 
 ### Bump version
 
@@ -32,7 +32,5 @@ twine upload dist/*
 ### Push to GitHub
 
 ```bash
-
-git commit -am "Added dev back to version"
 git push upstream  && git push upstream --tags
 ```
