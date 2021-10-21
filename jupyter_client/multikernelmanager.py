@@ -64,12 +64,6 @@ class MultiKernelManager(LoggingConfigurable):
         """,
     ).tag(config=True)
 
-    use_pending_kernels = Bool(
-        False,
-        help="""Whether to make kernels available before the process has started.  The
-        kernel has a `.ready` future which can be awaited before connecting""",
-    ).tag(config=True)
-
     @observe("kernel_manager_class")
     def _kernel_manager_class_changed(self, change):
         self.kernel_manager_factory = self._create_kernel_manager_factory()
@@ -189,7 +183,7 @@ class MultiKernelManager(LoggingConfigurable):
 
         starter = ensure_async(km.start_kernel(**kwargs))
 
-        if self.use_pending_kernels:
+        if getattr(self, 'use_pending_kernels', False):
             asyncio.create_task(starter)
             self._kernels[kernel_id] = km
         else:
@@ -475,6 +469,12 @@ class AsyncMultiKernelManager(MultiKernelManager):
         subclassing of the AsyncKernelManager for customized behavior.
         """,
     )
+
+    use_pending_kernels = Bool(
+        False,
+        help="""Whether to make kernels available before the process has started.  The
+        kernel has a `.ready` future which can be awaited before connecting""",
+    ).tag(config=True)
 
     start_kernel = MultiKernelManager._async_start_kernel
     shutdown_kernel = MultiKernelManager._async_shutdown_kernel

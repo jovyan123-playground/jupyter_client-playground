@@ -49,6 +49,13 @@ class TestKernelManager(TestCase):
         km = MultiKernelManager(config=c)
         return km
 
+    @staticmethod
+    def _get_pending_kernels_km():
+        c = Config()
+        c.MultiKernelManager.use_pending_kernels = True
+        km = MultiKernelManager(config=c)
+        return km
+
     # static so picklable for multiprocessing on Windows
     @staticmethod
     def _run_lifecycle(km, test_kid=None):
@@ -58,6 +65,7 @@ class TestKernelManager(TestCase):
         else:
             kid = km.start_kernel(stdout=PIPE, stderr=PIPE)
         assert km.is_alive(kid)
+        assert km.get_kernel(kid).ready.done()
         assert kid in km
         assert kid in km.list_kernel_ids()
         assert len(km) == 1, f"{len(km)} != {1}"
@@ -243,6 +251,13 @@ class TestAsyncKernelManager(AsyncTestCase):
         km = AsyncMultiKernelManager(config=c)
         return km
 
+    @staticmethod
+    def _get_pending_kernels_km():
+        c = Config()
+        c.AsyncMultiKernelManager.use_pending_kernels = True
+        km = AsyncMultiKernelManager(config=c)
+        return km
+
     # static so picklable for multiprocessing on Windows
     @staticmethod
     async def _run_lifecycle(km, test_kid=None):
@@ -333,6 +348,57 @@ class TestAsyncKernelManager(AsyncTestCase):
         self.assertNotIn(kid, km)
         # shutdown again is okay, because we have no kernels
         await km.shutdown_all()
+
+    @gen_test
+    async def test_use_pending_kernels(self):
+        km = self._get_pending_kernels_km()
+        kid = await km.start_kernel(stdout=PIPE, stderr=PIPE)
+        kernel = km.get_kernel(kid)
+        assert not kernel.ready.done()
+        assert kid in km
+        assert kid in km.list_kernel_ids()
+        assert len(km) == 1, f"{len(km)} != {1}"
+        await kernel.ready
+        await km.restart_kernel(kid, now=True)
+        assert await km.is_alive(kid)
+        assert kid in km.list_kernel_ids()
+        await km.interrupt_kernel(kid)
+        k = km.get_kernel(kid)
+        assert isinstance(k, AsyncKernelManager)
+        await km.shutdown_kernel(kid, now=True)
+        assert kid not in km, f"{kid} not in {km}"
+
+    @gen_test
+    async def test_use_pending_kernels_early_restart(self):
+        km = self._get_pending_kernels_km()
+        kid = await km.start_kernel(stdout=PIPE, stderr=PIPE)
+        kernel = km.get_kernel(kid)
+        assert not kernel.ready.done()
+        with pytest.raises(RuntimeError):
+            await km.restart_kernel(kid, now=True)
+        await kernel.ready
+        await km.shutdown_kernel(kid, now=True)
+        assert kid not in km, f"{kid} not in {km}"
+
+    @gen_test
+    async def test_use_pending_kernels_early_shutdown(self):
+        km = self._get_pending_kernels_km()
+        kid = await km.start_kernel(stdout=PIPE, stderr=PIPE)
+        kernel = km.get_kernel(kid)
+        assert not kernel.ready.done()
+        await km.shutdown_kernel(kid, now=True)
+        assert kid not in km, f"{kid} not in {km}"
+
+    @gen_test
+    async def test_use_pending_kernels_early_interrupt(self):
+        km = self._get_pending_kernels_km()
+        kid = await km.start_kernel(stdout=PIPE, stderr=PIPE)
+        kernel = km.get_kernel(kid)
+        assert not kernel.ready.done()
+        with pytest.raises(RuntimeError):
+            await km.interrupt_kernel(kid)
+        await km.shutdown_kernel(kid, now=True)
+        assert kid not in km, f"{kid} not in {km}"
 
     @gen_test
     async def test_tcp_cinfo(self):

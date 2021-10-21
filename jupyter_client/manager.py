@@ -351,6 +351,8 @@ class KernelManager(ConnectionFileMixin):
             await ensure_async(self._launch_kernel(kernel_cmd, **kw))
             await ensure_async(self.post_start_kernel(**kw))
             if not done:
+                # Add a small sleep to ensure tests can capture the state before done
+                await asyncio.sleep(0.001)
                 self._ready.set_result(None)
 
         except Exception as e:
