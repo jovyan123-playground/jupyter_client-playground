@@ -163,6 +163,7 @@ class MultiKernelManager(LoggingConfigurable):
     ) -> None:
         await kernel_awaitable
         self._kernels[kernel_id] = km
+        del self._starting_kernels[kernel_id]
 
     async def _async_start_kernel(self, kernel_name: t.Optional[str] = None, **kwargs) -> str:
         """Start a new kernel.
@@ -182,15 +183,13 @@ class MultiKernelManager(LoggingConfigurable):
         kwargs['kernel_id'] = kernel_id  # Make kernel_id available to manager and provisioner
 
         starter = ensure_async(km.start_kernel(**kwargs))
+        fut = asyncio.ensure_future(self._add_kernel_when_ready(kernel_id, km, starter))
+        self._starting_kernels[kernel_id] = fut
 
         if getattr(self, 'use_pending_kernels', False):
-            asyncio.create_task(starter)
             self._kernels[kernel_id] = km
         else:
-            fut = asyncio.ensure_future(self._add_kernel_when_ready(kernel_id, km, starter))
-            self._starting_kernels[kernel_id] = fut
             await fut
-            del self._starting_kernels[kernel_id]
 
         return kernel_id
 
@@ -214,9 +213,9 @@ class MultiKernelManager(LoggingConfigurable):
             Will the kernel be restarted?
         """
         self.log.info("Kernel shutdown: %s" % kernel_id)
-
+        if kernel_id in self._starting_kernels:
+            await self._starting_kernels[kernel_id]
         km = self.get_kernel(kernel_id)
-        await km.ready
         await ensure_async(km.shutdown_kernel(now, restart))
         self.remove_kernel(kernel_id)
 
@@ -250,18 +249,11 @@ class MultiKernelManager(LoggingConfigurable):
         """
         return self._kernels.pop(kernel_id, None)
 
-    async def _shutdown_starting_kernel(self, kid: str, now: bool) -> None:
-        if kid in self._starting_kernels:
-            await self._starting_kernels[kid]
-        await ensure_async(self.shutdown_kernel(kid, now=now))
-
     async def _async_shutdown_all(self, now: bool = False) -> None:
         """Shutdown all kernels."""
         kids = self.list_kernel_ids()
-        futs = [ensure_async(self.shutdown_kernel(kid, now=now)) for kid in kids]
-        futs += [
-            self._shutdown_starting_kernel(kid, now=now) for kid in self._starting_kernels.keys()
-        ]
+        kids += list(self._starting_kernels)
+        futs = [ensure_async(self.shutdown_kernel(kid, now=now)) for kid in set(kids)]
         await asyncio.gather(*futs)
 
     shutdown_all = run_sync(_async_shutdown_all)
