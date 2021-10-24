@@ -561,5 +561,6 @@ class TestAsyncKernelManager(AsyncTestCase):
         assert kernel_id in km._starting_kernels
         with pytest.raises(FileNotFoundError):
             await km.get_kernel(kernel_id).ready
+        assert kernel_id in km.list_kernel_ids()
+        await km.shutdown_kernel(kernel_id)
         assert kernel_id not in km.list_kernel_ids()
-        assert kernel_id not in km._starting_kernels

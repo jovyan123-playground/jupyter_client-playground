@@ -164,10 +164,6 @@ class MultiKernelManager(LoggingConfigurable):
         try:
             await kernel_awaitable
             self._kernels[kernel_id] = km
-        except Exception:
-            if kernel_id in self._kernels:
-                self.remove_kernel(kernel_id)
-            raise
         finally:
             self._starting_kernels.pop(kernel_id, None)
 
@@ -220,7 +216,11 @@ class MultiKernelManager(LoggingConfigurable):
         """
         self.log.info("Kernel shutdown: %s" % kernel_id)
         if kernel_id in self._starting_kernels:
-            await self._starting_kernels[kernel_id]
+            try:
+                await self._starting_kernels[kernel_id]
+            except Exception:
+                self.remove_kernel(kernel_id)
+                return
         km = self.get_kernel(kernel_id)
         await ensure_async(km.shutdown_kernel(now, restart))
         self.remove_kernel(kernel_id)

@@ -452,6 +452,10 @@ class KernelManager(ConnectionFileMixin):
             Will this kernel be restarted after it is shutdown. When this
             is True, connection files will not be cleaned up.
         """
+        # Shutdown is a no-op for a kernel that had a failed startup
+        if self._ready.exception():
+            return
+
         self.shutting_down = True  # Used by restarter to prevent race condition
         # Stop monitoring for restarting while we shutdown.
         self.stop_restarter()
