@@ -161,9 +161,15 @@ class MultiKernelManager(LoggingConfigurable):
     async def _add_kernel_when_ready(
         self, kernel_id: str, km: KernelManager, kernel_awaitable: t.Awaitable
     ) -> None:
-        await kernel_awaitable
-        self._kernels[kernel_id] = km
-        del self._starting_kernels[kernel_id]
+        try:
+            await kernel_awaitable
+            self._kernels[kernel_id] = km
+        except Exception:
+            if kernel_id in self._kernels:
+                self.remove_kernel(kernel_id)
+            raise
+        finally:
+            self._starting_kernels.pop(kernel_id, None)
 
     async def _async_start_kernel(self, kernel_name: t.Optional[str] = None, **kwargs) -> str:
         """Start a new kernel.

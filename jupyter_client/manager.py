@@ -358,6 +358,7 @@ class KernelManager(ConnectionFileMixin):
         except Exception as e:
             if not done:
                 self._ready.set_exception(e)
+                self.log.exception(self._ready.exception())
             raise e
 
     start_kernel = run_sync(_async_start_kernel)

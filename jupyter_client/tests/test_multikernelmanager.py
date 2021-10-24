@@ -540,6 +540,17 @@ class TestAsyncKernelManager(AsyncTestCase):
 
     @gen_test
     async def test_bad_kernelspec(self):
+        km = self._get_tcp_km()
+        install_kernel(
+            os.path.join(paths.jupyter_data_dir(), "kernels"),
+            argv=["non_existent_executable"],
+            name="bad",
+        )
+        with pytest.raises(FileNotFoundError):
+            await km.start_kernel(kernel_name="bad", stdout=PIPE, stderr=PIPE)
+
+    @gen_test
+    async def test_bad_kernelspec_pending(self):
         km = self._get_pending_kernels_km()
         install_kernel(
             os.path.join(paths.jupyter_data_dir(), "kernels"),
@@ -547,5 +558,8 @@ class TestAsyncKernelManager(AsyncTestCase):
             name="bad",
         )
         kernel_id = await km.start_kernel(kernel_name="bad", stdout=PIPE, stderr=PIPE)
+        assert kernel_id in km._starting_kernels
         with pytest.raises(FileNotFoundError):
             await km.get_kernel(kernel_id).ready
+        assert kernel_id not in km.list_kernel_ids()
+        assert kernel_id not in km._starting_kernels
